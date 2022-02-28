@@ -14,6 +14,8 @@ interface IStrat {
     function collatLower() external view returns (uint256);
     function collatUpper() external view returns (uint256);
     function vault() external view returns (address);
+    function rebalanceDebt() external;
+    function rebalanceCollateral() external;
 }
 
 interface IVault {
@@ -27,7 +29,7 @@ contract Hysteria is Initializable {
     uint256 public hysteriaDebt;
     uint256 public hysteriaCollateral;
     
-    function initialise(
+    function initialize(
         uint256 _hysteriaDebt,
         uint256 _hysteriaCollateral
     ) public initializer {
@@ -64,13 +66,15 @@ contract Hysteria is Initializable {
     }
 
     function debtTrigger(address strategy) public view returns (bool _canExec, bytes memory _execPayload) {
+        _execPayload = abi.encodeWithSelector(IStrat(strategy).rebalanceDebt.selector);
         if (!isInactive(strategy)) {
             uint256 debtRatio = IStrat(strategy).calcDebtRatio();
-            _canExec = (debtRatio > (IStrat(strategy).debtUpper().add(hysteriaDebt)) || debtRatio < IStrat(strategy).debtLower().sub(hysteriaDebt));
+            _canExec = (debtRatio > (IStrat(strategy).debtUpper().add(hysteriaDebt)) || debtRatio < IStrat(strategy).debtLower().sub(hysteriaDebt));           
         }
     }
     
     function collatTrigger(address strategy) public view returns (bool _canExec, bytes memory _execPayload) {
+        _execPayload = abi.encodeWithSelector(IStrat(strategy).rebalanceDebt.selector);
         if (!isInactive(strategy)) {
             uint256 collatRatio = IStrat(strategy).calcCollateral();
             _canExec = (collatRatio > IStrat(strategy).collatUpper().add(hysteriaCollateral) || collatRatio < IStrat(strategy).collatLower().sub(hysteriaCollateral));
