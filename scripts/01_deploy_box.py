@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 from brownie import (
-    Box,
+    Hysteria,
     TransparentUpgradeableProxy,
     ProxyAdmin,
     config,
@@ -13,9 +13,9 @@ from scripts.helpful_scripts import get_account, encode_function_data
 def main():
     account = get_account()
     print(f"Deploying to {network.show_active()}")
-    box = Box.deploy(
+    hysteria = Hysteria.deploy(
         {"from": account},
-        publish_source=config["networks"][network.show_active()]["verify"],
+        publish_source=True
     )
     # Optional, deploy the ProxyAdmin and use that as the admin contract
     proxy_admin = ProxyAdmin.deploy(
@@ -29,11 +29,11 @@ def main():
     box_encoded_initializer_function = encode_function_data()
     # box_encoded_initializer_function = encode_function_data(initializer=box.store, 1)
     proxy = TransparentUpgradeableProxy.deploy(
-        box.address,
-        # account.address,
+        hysteria.address,
         proxy_admin.address,
-        box_encoded_initializer_function,
-        {"from": account, "gas_limit": 1000000},
+        b'',
+        {"from": account},
+        publish_source=True
     )
     print(f"Proxy deployed to {proxy} ! You can now upgrade it to BoxV2!")
     proxy_box = Contract.from_abi("Box", proxy.address, Box.abi)

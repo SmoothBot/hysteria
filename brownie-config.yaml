@@ -11,7 +11,6 @@ compiler:
       - '@openzeppelin=OpenZeppelin/openzeppelin-contracts@4.1.0'
 # automatically fetch contract sources from Etherscan
 autofetch_sources: True
-dotenv: .env
 networks:
   default: development
   development:
