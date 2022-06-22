@@ -104,6 +104,10 @@ contract KeeperProxyHysteria {
         }
     }
 
+    function updateStrategist() external {
+        strategist = strategy.strategist();
+    }
+
     function setStrategy(address _strategy) external {
         _onlyStrategist();
         setStrategyInternal(_strategy);
