@@ -22,7 +22,7 @@ interface IKeeperProxy {
 }
 
 
-contract ChainLinkUpkeep is KeeperCompatibleInterface {
+contract ChainlinkUpkeep is KeeperCompatibleInterface {
     address public keeperProxy;
 
     constructor  (address _keeperProxy) public {
