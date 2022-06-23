@@ -4,6 +4,7 @@ pragma solidity ^0.8.0;
 pragma experimental ABIEncoderV2;
 
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
 import "./interfaces/KeeperCompatible.sol";
 
 interface IResolver {
@@ -21,11 +22,15 @@ interface IKeeperProxy {
     function debtTriggerHysteria() external view returns (bool _canExec);
 }
 
-
-contract ChainlinkUpkeep is KeeperCompatibleInterface {
+contract ChainlinkUpkeep is KeeperCompatibleInterface, Ownable {
     address public keeperProxy;
 
     constructor  (address _keeperProxy) public {
+        keeperProxy = _keeperProxy;
+    }
+    
+    function setKeeperProxy(address _keeperProxy) external onlyOwner {
+        require(_keeperProxy != address(0), "_keeperProxy is the zero address");
         keeperProxy = _keeperProxy;
     }
 

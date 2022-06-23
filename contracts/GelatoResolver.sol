@@ -22,7 +22,7 @@ interface IVault {
     function strategies(address _strategy) external view returns(uint256 performanceFee, uint256 activation, uint256 debtRatio, uint256 minDebtPerHarvest, uint256 maxDebtPerHarvest, uint256 lastReport, uint256 totalDebt, uint256 totalGain, uint256 totalLoss);
 }
 
-contract Hysteria is Initializable {
+contract GelatoResolver is Initializable {
     using SafeMath for uint256;
 
     address public owner;
