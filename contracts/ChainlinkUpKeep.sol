@@ -19,19 +19,23 @@ interface IKeeperProxy {
     function rebalanceDebt() external;
     function rebalanceCollateral() external;
 
+    function strategist() external view returns (address);
+
     // Proxy Keeper Functions
     function collatTriggerHysteria() external view returns (bool _canExec);
     function debtTriggerHysteria() external view returns (bool _canExec);
 }
 
-contract ChainlinkUpkeep is KeeperCompatibleInterface, Initializable, Ownable {
+contract ChainlinkUpkeep is KeeperCompatibleInterface, Initializable {
     address public keeperProxy;
     address public keeperRegistry;
 
-    function initialize(address owner, address _keeperProxy, address _keeperRegistry) public initializer {
+    error UpKeepNotNeeded();
+
+    // V2 Initializer
+    function initialize(address _keeperProxy, address _keeperRegistry) public reinitializer(2) {
         keeperProxy = _keeperProxy;
         keeperRegistry = _keeperRegistry;
-        _transferOwnership(owner);
     }
     
     // modifiers
@@ -40,12 +44,21 @@ contract ChainlinkUpkeep is KeeperCompatibleInterface, Initializable, Ownable {
         _;
     }
     
-    function setKeeperProxy(address _keeperProxy) external onlyOwner {
+    modifier onlyStrategist() {
+        require(msg.sender == strategist(), "!authorized");
+        _;
+    }
+
+    function strategist() public view returns (address) {
+        return IKeeperProxy(keeperProxy).strategist();
+    }
+
+    function setKeeperProxy(address _keeperProxy) external onlyStrategist {
         require(_keeperProxy != address(0), "_keeperProxy is the zero address");
         keeperProxy = _keeperProxy;
     }
     
-    function setKeeperRegistry(address _keeperRegistry) external onlyOwner {
+    function setKeeperRegistry(address _keeperRegistry) external onlyStrategist {
         require(_keeperRegistry != address(0), "_keeperRegistry is the zero address");
         keeperRegistry = _keeperRegistry;
     }
@@ -68,6 +81,8 @@ contract ChainlinkUpkeep is KeeperCompatibleInterface, Initializable, Ownable {
             IKeeperProxy(keeperProxy).rebalanceDebt();
         } else if (IKeeperProxy(keeperProxy).collatTriggerHysteria()) {
             IKeeperProxy(keeperProxy).rebalanceCollateral();
+        } else {
+            revert UpKeepNotNeeded();
         }
     }
 }
