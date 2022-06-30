@@ -6,6 +6,7 @@ pragma experimental ABIEncoderV2;
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 import "@openzeppelin/contracts/interfaces/IERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "./interfaces/KeeperCompatible.sol";
 import "./interfaces/IKeeperRegistry.sol";
 import "./interfaces/IAggregatorInterface.sol";
@@ -20,15 +21,17 @@ contract UpKeepAutoTopUp is KeeperCompatibleInterface, Ownable {
     address public registry;
     address usdc;
     uint256[] public upKeepWatchlist;
+    address aggregator; /// CL price aggregator for LINK/USDC
+    address router;
 
     error UpKeepAutoTopUp_IdxNotFound();
 
     /**
     * @notice 
-    * @param _usdc 
-    * @param _registry 
-    * @param _aggregator 
-    * @param _router 
+    * @param _usdc bla
+    * @param _registry bla
+    * @param _aggregator bla
+    * @param _router bla
     */
     constructor(
         address _usdc,
@@ -42,6 +45,9 @@ contract UpKeepAutoTopUp is KeeperCompatibleInterface, Ownable {
         router = _router;
     }
 
+    /**
+    * @notice modifier to only allow the registry to call an external function
+    */
     modifier onlyKeeperRegistry() {
         require(msg.sender == registry, "!authorized");
         _;
@@ -128,23 +134,13 @@ contract UpKeepAutoTopUp is KeeperCompatibleInterface, Ownable {
         }
     }
 
-    function getPrice() {
-
-    }
-
     function performUpkeep(bytes calldata data) external override onlyKeeperRegistry {
         uint256 upKeepIdx = abi.decode(data, (uint256));
         require (getUpKeepBalance(upKeepIdx) < linkBalanceThreshold);
 
+        int256 linkPrice = IAggregatorInterface(aggregator).latestAnswer();
 
-        linkPrice = IAggregatorInterface(aggregator).latestAnswer().mul;
+        // TODO
 
-        // if (IKeeperProxy(keeperProxy).debtTriggerHysteria()) {
-        //     IKeeperProxy(keeperProxy).rebalanceDebt();
-        // } else if (IKeeperProxy(keeperProxy).collatTriggerHysteria()) {
-        //     IKeeperProxy(keeperProxy).rebalanceCollateral();
-        // } else {
-        //     revert UpKeepNotNeeded();
-        // }
     }
 }
