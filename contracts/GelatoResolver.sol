@@ -25,30 +25,9 @@ interface IVault {
 contract GelatoResolver is Initializable {
     using SafeMath for uint256;
 
-    address public owner;
-    
-    function initialize() public initializer {}
-
-    /**
-     * @dev Throws if called by any account other than the owner.
-     */
-    modifier onlyOwner() {
-        require(owner == msg.sender, "Ownable: caller is not the owner");
-        _;
-    }
-
-    /**
-     * @dev Transfers ownership of the contract to a new account (`newOwner`).
-     * Can only be called by the current owner.
-     */
-    function transferOwnership(address newOwner) public virtual onlyOwner {
-        require(newOwner != address(0), "Ownable: new owner is the zero address");
-        owner = newOwner;
-    }
-
     function debtTrigger(address keeperProxy) public view returns (bool _canExec, bytes memory _execPayload) {
         _execPayload = abi.encodeWithSelector(IKeeperProxy(keeperProxy).rebalanceDebt.selector);
-        _canExec = IKeeperProxy(keeperProxy).collatTriggerHysteria();
+        _canExec = IKeeperProxy(keeperProxy).debtTriggerHysteria();
     }
     
     function collatTrigger(address keeperProxy) public view returns (bool _canExec, bytes memory _execPayload) {

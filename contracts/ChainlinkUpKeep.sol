@@ -8,12 +8,6 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/proxy/utils/Initializable.sol";
 import "./interfaces/KeeperCompatible.sol";
 
-
-interface IResolver {
-    function debtTrigger(address strategy) external view returns (bool _canExec, bytes memory _execPayload);
-    function collatTrigger(address strategy) external view returns (bool _canExec, bytes memory _execPayload); 
-}
-
 interface IKeeperProxy {
     // Strategy Wrappers
     function rebalanceDebt() external;
@@ -22,67 +16,106 @@ interface IKeeperProxy {
     function strategist() external view returns (address);
 
     // Proxy Keeper Functions
+    function collatTrigger() external view returns (bool _canExec);
+    function debtTrigger() external view returns (bool _canExec);
     function collatTriggerHysteria() external view returns (bool _canExec);
     function debtTriggerHysteria() external view returns (bool _canExec);
 }
 
 contract ChainlinkUpkeep is KeeperCompatibleInterface, Initializable {
-    address public keeperProxy;
-    address public keeperRegistry;
+    address public owner;
+    address public clRegistry;
 
+    /// Errors
     error UpKeepNotNeeded();
 
+    /// Events
+    event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
+
     // V2 Initializer
-    function initialize(address _keeperProxy, address _keeperRegistry) public reinitializer(2) {
-        keeperProxy = _keeperProxy;
-        keeperRegistry = _keeperRegistry;
+    function initialize(address _owner, address _clRegistry) public initializer {
+        owner = _owner;
+        clRegistry = _clRegistry;
     }
-    
-    // modifiers
-    modifier onlyKeeperRegistry() {
-        require(msg.sender == keeperRegistry, "!authorized");
+
+    /// modifiers
+    modifier onlyRegistry() {
+        require(msg.sender == clRegistry, "!authorized");
         _;
     }
     
-    modifier onlyStrategist() {
-        require(msg.sender == strategist(), "!authorized");
+    modifier onlyOwner() {
+        require(msg.sender == owner, "!authorized");
         _;
     }
 
-    function strategist() public view returns (address) {
-        return IKeeperProxy(keeperProxy).strategist();
+    /**
+     * @notice Transfers ownership of the contract to a new account (`newOwner`).
+     * Can only be called by the current owner.
+     */
+    function transferOwnership(address newOwner) public onlyOwner {
+        require(newOwner != address(0), "Ownable: new owner is the zero address");
+        _transferOwnership(newOwner);
     }
 
-    function setKeeperProxy(address _keeperProxy) external onlyStrategist {
-        require(_keeperProxy != address(0), "_keeperProxy is the zero address");
-        keeperProxy = _keeperProxy;
+    /**
+     * @notice Leaves the contract without owner. It will not be possible to call
+     * `onlyOwner` functions anymore. Can only be called by the current owner.
+     *
+     * NOTICE Renouncing ownership will leave the contract without an owner,
+     * thereby removing any functionality that is only available to the owner.
+     */
+    function renounceOwnership() public onlyOwner {
+        _transferOwnership(address(0));
     }
-    
-    function setKeeperRegistry(address _keeperRegistry) external onlyStrategist {
-        require(_keeperRegistry != address(0), "_keeperRegistry is the zero address");
-        keeperRegistry = _keeperRegistry;
+   
+    /**
+     * @notice Sets the Chainlink Registry
+     */
+    function setclRegistry(address _clRegistry) external onlyOwner {
+        require(_clRegistry != address(0), "_clRegistry is the zero address");
+        clRegistry = _clRegistry;
     }
 
-    function checkUpkeep(bytes calldata /* checkData */) external view override returns (bool _upkeepNeeded, bytes memory _execPayload) {
+    /**
+     * @notice see KeeperCompatibleInterface.sol
+     */
+    function checkUpkeep(bytes calldata _checkData) external view override returns (bool _upkeepNeeded, bytes memory _performData) {
+        address keeperProxy = abi.decode(_checkData, (address));
+        
         /// first we check debt trigger, if debt rebalance doesn't need to be checked then we check collat trigger
         _upkeepNeeded = IKeeperProxy(keeperProxy).debtTriggerHysteria();
         if (_upkeepNeeded) {
-            _execPayload = abi.encodeWithSelector(IKeeperProxy(keeperProxy).rebalanceDebt.selector);
+            _performData = abi.encode(keeperProxy);
         } else {
             _upkeepNeeded = IKeeperProxy(keeperProxy).collatTriggerHysteria();
             if (_upkeepNeeded) {
-                _execPayload = abi.encodeWithSelector(IKeeperProxy(keeperProxy).rebalanceCollateral.selector);
+                _performData = abi.encode(keeperProxy);
             }
         }
     }
 
-    function performUpkeep(bytes calldata /* performData */) external override onlyKeeperRegistry {
-        if (IKeeperProxy(keeperProxy).debtTriggerHysteria()) {
+    /**
+     * @notice see KeeperCompatibleInterface.sol
+     */
+    function performUpkeep(bytes calldata _performData) external override onlyRegistry {
+        address keeperProxy = abi.decode(_performData, (address));
+        if (IKeeperProxy(keeperProxy).debtTrigger()) {
             IKeeperProxy(keeperProxy).rebalanceDebt();
-        } else if (IKeeperProxy(keeperProxy).collatTriggerHysteria()) {
+        } else if (IKeeperProxy(keeperProxy).collatTrigger()) {
             IKeeperProxy(keeperProxy).rebalanceCollateral();
         } else {
             revert UpKeepNotNeeded();
         }
+    }
+
+    /**
+     * @notice Transfers ownership of the contract to a new account (`newOwner`).
+     * Internal function without access restriction.
+     */
+    function _transferOwnership(address _newOwner) internal virtual {
+        address oldOwner = owner;
+        owner = _newOwner;
+        emit OwnershipTransferred(oldOwner, _newOwner);
     }
 }

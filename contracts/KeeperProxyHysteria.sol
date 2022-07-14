@@ -82,6 +82,17 @@ contract KeeperProxyHysteria {
 
     /**
      * @notice
+     * Returns true if a debt rebalance is required. 
+     */
+    function debtTrigger() public view returns (bool _canExec) {
+        if (!isInactive()) {
+            uint256 debtRatio = strategy.calcDebtRatio();
+            _canExec = debtRatio > strategy.debtUpper() || debtRatio < strategy.debtLower();           
+        }
+    }
+
+    /**
+     * @notice
      * Returns true if a debt rebalance is required. This adds an offset of "hysteriaDebt" to the
      * debt trigger thresholds to filter noise. Google Hysterisis
      */
@@ -89,6 +100,18 @@ contract KeeperProxyHysteria {
         if (!isInactive()) {
             uint256 debtRatio = strategy.calcDebtRatio();
             _canExec = (debtRatio > (strategy.debtUpper().add(hysteriaDebt)) || debtRatio < strategy.debtLower().sub(hysteriaDebt));           
+        }
+    }
+    
+    /**
+     * @notice
+     * Returns true if a collateral rebalance is required. This adds an offset of "hysteriaCollateral" to the
+     * collateral trigger thresholds to filter noise. 
+     */
+    function collatTrigger() public view returns (bool _canExec) {
+        if (!isInactive()) {
+            uint256 collatRatio = strategy.calcCollateral();
+            _canExec = collatRatio > strategy.collatUpper() || collatRatio < strategy.collatLower();
         }
     }
     
