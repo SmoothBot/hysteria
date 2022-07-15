@@ -6,6 +6,7 @@ pragma experimental ABIEncoderV2;
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelinupgradeable/contracts/proxy/utils/Initializable.sol";
+import "@openzeppelinupgradeable/contracts/access/OwnableUpgradeable.sol";
 import "./interfaces/KeeperCompatible.sol";
 
 interface IKeeperProxy {
@@ -22,19 +23,12 @@ interface IKeeperProxy {
     function debtTriggerHysteria() external view returns (bool _canExec);
 }
 
-contract ChainlinkUpkeep is KeeperCompatibleInterface, Initializable {
-    address public owner;
+contract ChainlinkUpkeep is Initializable, KeeperCompatibleInterface, OwnableUpgradeable {
     address public clRegistry;
-
-    /// Errors
-    error UpKeepNotNeeded();
-
-    /// Events
-    event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
 
     // V2 Initializer
     function initialize(address _owner, address _clRegistry) public initializer {
-        owner = _owner;
+        _transferOwnership(_owner);
         clRegistry = _clRegistry;
     }
 
@@ -42,31 +36,6 @@ contract ChainlinkUpkeep is KeeperCompatibleInterface, Initializable {
     modifier onlyRegistry() {
         require(msg.sender == clRegistry, "!authorized");
         _;
-    }
-    
-    modifier onlyOwner() {
-        require(msg.sender == owner, "!authorized");
-        _;
-    }
-
-    /**
-     * @notice Transfers ownership of the contract to a new account (`newOwner`).
-     * Can only be called by the current owner.
-     */
-    function transferOwnership(address newOwner) public onlyOwner {
-        require(newOwner != address(0), "Ownable: new owner is the zero address");
-        _transferOwnership(newOwner);
-    }
-
-    /**
-     * @notice Leaves the contract without owner. It will not be possible to call
-     * `onlyOwner` functions anymore. Can only be called by the current owner.
-     *
-     * NOTICE Renouncing ownership will leave the contract without an owner,
-     * thereby removing any functionality that is only available to the owner.
-     */
-    function renounceOwnership() public onlyOwner {
-        _transferOwnership(address(0));
     }
    
     /**
@@ -102,20 +71,8 @@ contract ChainlinkUpkeep is KeeperCompatibleInterface, Initializable {
         address keeperProxy = abi.decode(_performData, (address));
         if (IKeeperProxy(keeperProxy).debtTrigger()) {
             IKeeperProxy(keeperProxy).rebalanceDebt();
-        } else if (IKeeperProxy(keeperProxy).collatTrigger()) {
-            IKeeperProxy(keeperProxy).rebalanceCollateral();
         } else {
-            revert UpKeepNotNeeded();
+            IKeeperProxy(keeperProxy).rebalanceCollateral();
         }
-    }
-
-    /**
-     * @notice Transfers ownership of the contract to a new account (`newOwner`).
-     * Internal function without access restriction.
-     */
-    function _transferOwnership(address _newOwner) internal virtual {
-        address oldOwner = owner;
-        owner = _newOwner;
-        emit OwnershipTransferred(oldOwner, _newOwner);
     }
 }
