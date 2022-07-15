@@ -37,10 +37,10 @@ contract KeeperProxyJointLP is BaseKeeperProxy {
     uint256 public hysteriaDebt;
     uint256 public hysteriaCollateral;
 
-    function initialize(address _strategy, uint256 _hysteriaDebt, uint256 _hysteriaCollateral) public onlyInitializing {
+    function initialize(address _strategy, uint256 _hysteriaDebt, uint256 _hysteriaCollateral) public initializer {
         hysteriaDebt = _hysteriaDebt;
         hysteriaCollateral = _hysteriaCollateral;
-        setStrategyInternal(_strategy);
+        _initialize(_strategy);
     }
 
     function tendTrigger(uint256 _callCost) public override view returns (bool) {
@@ -53,9 +53,10 @@ contract KeeperProxyJointLP is BaseKeeperProxy {
     }
 
     function isInactive() public override view returns (bool) {
-        ( , , uint256 debtRatio0, , , , , ,) = IVault(vault0()).strategies(providerStrategy0());
-        ( , , uint256 debtRatio1, , , , , ,) = IVault(vault1()).strategies(providerStrategy0());
-        return debtRatio0 == 0 || debtRatio1 == 0;
+        return false; // Not working?
+        // ( , , uint256 debtRatio0, , , , , ,) = IVault(vault0()).strategies(providerStrategy0());
+        // ( , , uint256 debtRatio1, , , , , ,) = IVault(vault1()).strategies(providerStrategy0());
+        // return debtRatio0 == 0 || debtRatio1 == 0;
     }
 
     /**
@@ -65,7 +66,7 @@ contract KeeperProxyJointLP is BaseKeeperProxy {
     function debtTriggerHysteria() public view returns (bool _canExec) {    
         if (!isInactive()) {    
             (uint256 debtRatio0, uint256 debtRatio1) = IJoint(strategy).calcDebtRatio();
-            _canExec = (debtRatio0 > (IJoint(strategy).debtUpper().add(hysteriaDebt)) || debtRatio0 > (IJoint(strategy).debtUpper().add(hysteriaDebt)));           
+            _canExec = (debtRatio0 > (IJoint(strategy).debtUpper().add(hysteriaDebt)) || debtRatio1 > (IJoint(strategy).debtUpper().add(hysteriaDebt)));           
         }
     }
 
@@ -105,7 +106,7 @@ contract KeeperProxyJointLP is BaseKeeperProxy {
     function debtTrigger() public view returns (bool _canExec) {
         if (!isInactive()) {    
             (uint256 debtRatio0, uint256 debtRatio1) = IJoint(strategy).calcDebtRatio();
-            _canExec = (debtRatio0 > (IJoint(strategy).debtUpper()) || debtRatio0 > (IJoint(strategy).debtUpper()));           
+            _canExec = (debtRatio0 > (IJoint(strategy).debtUpper()) || debtRatio1 > (IJoint(strategy).debtUpper()));           
         }
     }
     

@@ -23,7 +23,7 @@ interface IResolver {
 contract GelatoResolver is Initializable, OwnableUpgradeable {
     using SafeMath for uint256;
 
-    address gelato; // Gelato address
+    address public gelato; // Gelato address
     
     function initialize(address _owner, address _gelato) public initializer {
         _transferOwnership(_owner);
@@ -33,6 +33,10 @@ contract GelatoResolver is Initializable, OwnableUpgradeable {
     modifier onlyGelato() {
         require(gelato == _msgSender() || owner() == _msgSender(), "GelatoResolver: !gelato");
         _;
+    }
+
+    function setGelato(address _gelato) external onlyOwner {
+        gelato = _gelato;
     }
 
     function tendTrigger(address keeperProxy) public view returns (bool _canExec, bytes memory _execPayload) {
@@ -55,3 +59,4 @@ contract GelatoResolver is Initializable, OwnableUpgradeable {
         IKeeperProxyBase(keeperProxy).harvest(); // todo: use callcost
     }
 }
+

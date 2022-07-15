@@ -30,7 +30,7 @@ abstract contract BaseKeeperProxy is Initializable, ReentrancyGuardUpgradeable {
 
     error BaseKeeperProxy_IdxNotFound();
 
-    function initialize(address _strategy) public virtual onlyInitializing {
+    function _initialize(address _strategy) internal {
         setStrategyInternal(_strategy);
         __ReentrancyGuard_init();
     }

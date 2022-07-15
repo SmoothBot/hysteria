@@ -49,7 +49,7 @@ contract KeeperProxyCoreStrategy is BaseKeeperProxy {
     function initialize(address _strategy, uint256 _hysteriaDebt, uint256 _hysteriaCollateral) public initializer {
         hysteriaDebt = _hysteriaDebt;
         hysteriaCollateral = _hysteriaCollateral;
-        super.initialize(_strategy);
+        _initialize(_strategy);
     }
 
     function tendTrigger(uint256 _callCost) public override view returns (bool) {
