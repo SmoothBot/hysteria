@@ -5,7 +5,7 @@ pragma experimental ABIEncoderV2;
 
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
-import "@openzeppelin/contracts/proxy/utils/Initializable.sol";
+import "@openzeppelinupgradeable/contracts/proxy/utils/Initializable.sol";
 import "./interfaces/KeeperCompatible.sol";
 
 interface IKeeperProxy {

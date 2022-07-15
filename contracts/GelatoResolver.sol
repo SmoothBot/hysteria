@@ -4,7 +4,7 @@ pragma solidity ^0.8.0;
 pragma experimental ABIEncoderV2;
 
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
-import "@openzeppelin/contracts/proxy/utils/Initializable.sol";
+import "@openzeppelinupgradeable/contracts/proxy/utils/Initializable.sol";
 
 interface IKeeperProxy {
     // Strategy Functions
@@ -16,10 +16,6 @@ interface IKeeperProxy {
     // Proxy Keeper Functions
     function collatTriggerHysteria() external view returns (bool _canExec);
     function debtTriggerHysteria() external view returns (bool _canExec);
-}
-
-interface IVault {
-    function strategies(address _strategy) external view returns(uint256 performanceFee, uint256 activation, uint256 debtRatio, uint256 minDebtPerHarvest, uint256 maxDebtPerHarvest, uint256 lastReport, uint256 totalDebt, uint256 totalGain, uint256 totalLoss);
 }
 
 contract GelatoResolver is Initializable {
