@@ -16,8 +16,8 @@ interface IKeeperProxyBase {
 }
 interface IResolver {
     // Proxy Keeper Functions
-    function tend() external;
-    function harvest() external;
+    function tend(address keeperProxy) external;
+    function harvest(address keeperProxy) external;
 }
 
 contract GelatoResolver is Initializable, OwnableUpgradeable {
