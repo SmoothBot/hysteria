@@ -69,6 +69,7 @@ abstract contract BaseKeeperProxy is Initializable, ReentrancyGuardUpgradeable {
 
     function addKeeper(address _newKeeper) external {
         _onlyStrategist();
+        require(!keepers[_newKeeper], "isKeeper");
         keepers[_newKeeper] = true;
         keepersList.push(_newKeeper);
     }
